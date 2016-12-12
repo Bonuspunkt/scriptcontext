@@ -1,0 +1,44 @@
+{
+  "name": "scriptcontext",
+  "version": "1.0.0",
+  "description": "provides a disposable context for scripts",
+  "main": "lib/scriptContext.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "eslint": "^3.8.1",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.1.2",
+    "npm-run-all": "^3.1.1"
+  },
+  "scripts": {
+    "mocha": "mocha",
+    "test": "npm-run-all test:*",
+    "test:lint": "eslint .",
+    "test:coverage": "istanbul cover node_modules/mocha/bin/_mocha"
+  },
+  "author": "Bonuspunkt",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bonuspunkt/ircmessageparser.git"
+  },
+  "keywords": [
+    "irc",
+    "client",
+    "message",
+    "parser",
+    "color",
+    "bold",
+    "italic",
+    "underline",
+    "reverse"
+  ],
+  "bugs": {
+    "url": "https://github.com/Bonuspunkt/scriptcontext/issues"
+  },
+  "homepage": "https://github.com/Bonuspunkt/scriptcontext#readme"
+}
