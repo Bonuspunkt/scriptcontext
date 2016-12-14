@@ -35,6 +35,16 @@ describe('scriptContext', () => {
             expect(config.fn.data).to.not.equal(true);
         });
 
+        it('should not be possible to override sandbox buildins', () => {
+            const config = {};
+
+            const context = scriptContext(config, [{
+                content: 'resolve = () => {};'
+            }]);
+
+            const allExecuted = context.scriptResult.every(r => r.success);
+            expect(allExecuted).to.equal(false);
+        });
     });
 
     describe('resolve', () => {
