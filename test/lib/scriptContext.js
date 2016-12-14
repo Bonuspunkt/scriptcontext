@@ -127,7 +127,35 @@ describe('scriptContext', () => {
             expect(executedCount).to.equal(1);
         });
 
-        it('should not be able to handle events after destroy', () => {
+        it('should be able to handle multiple subscriptions', () => {
+            const emitter = new EventEmitter();
+
+            let executedCount = 0;
+            const config = {
+                emitter,
+                execute: () => executedCount++
+            };
+            const files = [
+                { content: 'const execute = resolve("execute"); subscribe("emitter.event", execute);'},
+                { content: 'const execute = resolve("execute"); subscribe("emitter.event", execute);'}
+            ];
+
+            const context = scriptContext(config, files);
+
+            const { scriptResult } = context;
+            expect(scriptResult.length).to.equal(2);
+
+            const allExecuted = scriptResult.every(r => r.success);
+            expect(allExecuted).to.equal(true);
+
+            expect(executedCount).to.equal(0);
+
+            emitter.emit('event');
+
+            expect(executedCount).to.equal(2);
+        });
+
+        it('should not handle events after destroy', () => {
             const emitter = new EventEmitter();
 
             let executedCount = 0;
