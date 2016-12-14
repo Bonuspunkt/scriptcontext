@@ -86,7 +86,7 @@ describe('scriptContext', () => {
 
     });
 
-    describe('resolve', () => {
+    describe('subscribe', () => {
 
         it('should be able to subscribe to eventemitter', () => {
             const emitter = new EventEmitter();
@@ -146,6 +146,48 @@ describe('scriptContext', () => {
             emitter.emit('event');
 
             expect(executedCount).to.equal(0);
+        });
+
+    });
+
+    describe('unsubscribe', () => {
+
+        it('should be able to unsubscribe', () => {
+            const emitter = new EventEmitter();
+
+            let executedCount = 0;
+            const config = {
+                emitter,
+                execute: () => executedCount++
+            };
+            const files = [{
+                content:
+                    'const execute = resolve("execute");' +
+                    'const handler = () => {' +
+                    '   execute();' +
+                    '   unsubscribe("emitter.event", handler);' +
+                    '};' +
+                    'subscribe("emitter.event", handler);'
+            }];
+
+
+            const context = scriptContext(config, files);
+
+            const { scriptResult } = context;
+            expect(scriptResult.length).to.equal(1);
+
+            const object = scriptResult[0];
+            expect(object.success).to.equal(true);
+
+            expect(executedCount).to.equal(0);
+
+            emitter.emit('event');
+
+            expect(executedCount).to.equal(1);
+
+            emitter.emit('event');
+
+            expect(executedCount).to.equal(1);
         });
 
     });

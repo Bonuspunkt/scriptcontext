@@ -1,7 +1,7 @@
 {
   "name": "scriptcontext",
   "version": "1.0.0",
-  "description": "provides a disposable context for scripts",
+  "description": "provides a disposable sandbox for scripts",
   "main": "lib/scriptContext.js",
   "directories": {
     "test": "test"
