@@ -50,6 +50,7 @@ describe('scriptContext', () => {
             const allExecuted = context.scriptResult.every(r => r.success);
             expect(allExecuted).to.equal(false);
         });
+
     });
 
     describe('resolve', () => {
@@ -267,9 +268,11 @@ describe('scriptContext', () => {
                 done();
             }, 1);
         });
+
     });
 
     describe('provide functions', () => {
+
         it('should be able to provide functions', () => {
             let executed = false;
             const config = {
@@ -288,10 +291,36 @@ describe('scriptContext', () => {
 
             expect(executed).to.equal(true);
         });
+
+        it('should not be able to register same function twice', () => {
+            const context = scriptContext({}, [
+                { content: 'provideFn("name", () => {});' },
+                { content: 'provideFn("name", () => {});' },
+            ]);
+
+            const { scriptResult } = context;
+            const [ worked, failed ] = scriptResult;
+
+            expect(worked.success).to.equal(true);
+            expect(failed.success).to.equal(false);
+        });
+
+        it('should not be possibe to register other than functions', () => {
+            const context = scriptContext({}, [
+                { content: 'provideFn("name", 1);' },
+                { content: 'provideFn("name", "text");' },
+                { content: 'provideFn("name", /regExp/);' },
+                { content: 'provideFn("", new Date())' }
+            ]);
+
+            const allError = context.scriptResult.every(script => script.error);
+            expect(allError).to.equal(true);
+        });
+
     });
 
-
     describe('provide / (un)subscribe script event', () => {
+
         it('should be able to provide events', () => {
 
             let executedCount = 0;
@@ -326,5 +355,19 @@ describe('scriptContext', () => {
 
             expect(executedCount).to.equal(1);
         });
+
+        it('should not be possibe to register an event twice', () => {
+            const context = scriptContext({}, [
+                { content: 'provideEvent("name");' },
+                { content: 'provideEvent("name");' },
+            ]);
+
+            const { scriptResult } = context;
+            const [ worked, failed ] = scriptResult;
+
+            expect(worked.success).to.equal(true);
+            expect(failed.success).to.equal(false);
+        });
+
     });
 });
