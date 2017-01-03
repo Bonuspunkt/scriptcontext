@@ -3,6 +3,11 @@ const { EventEmitter } = require('events');
 const expect = require('chai').expect;
 const scriptContext = require('../../lib/scriptContext');
 
+const scriptOk = scriptResult => {
+    const failed = scriptResult.some(script => !script.success);
+    expect(failed).to.equal(false);
+};
+
 describe('scriptContext', () => {
 
     describe('security', () => {
@@ -57,11 +62,8 @@ describe('scriptContext', () => {
                 content: 'resolve("func")'
             }]);
 
-            const scriptResult = context.scriptResult;
-            expect(scriptResult.length).to.equal(1);
-            const object = scriptResult[0];
-            expect(object.success).to.equal(true);
-
+            const { scriptResult } = context;
+            scriptOk(scriptResult);
         });
 
         it('should resolve nested functions', () => {
@@ -74,10 +76,8 @@ describe('scriptContext', () => {
                 content: 'resolve("object.func")'
             }]);
 
-            const scriptResult = context.scriptResult;
-            expect(scriptResult.length).to.equal(1);
-            const objectFunc = scriptResult[0];
-            expect(objectFunc.success).to.equal(true);
+            const { scriptResult } = context;
+            scriptOk(scriptResult);
         });
 
         it('should not resolve non functions', () => {
@@ -90,8 +90,8 @@ describe('scriptContext', () => {
 
             const { scriptResult } = context;
             expect(scriptResult.length).to.equal(1);
-            const object = scriptResult[0];
-            expect(object.success).to.equal(false);
+            const [script] = scriptResult;
+            expect(script.success).to.equal(false);
         });
 
     });
@@ -115,10 +115,7 @@ describe('scriptContext', () => {
             const context = scriptContext(config, files);
 
             const { scriptResult } = context;
-            expect(scriptResult.length).to.equal(1);
-
-            const object = scriptResult[0];
-            expect(object.success).to.equal(true);
+            scriptOk(scriptResult);
 
             expect(executedCount).to.equal(0);
 
@@ -143,10 +140,7 @@ describe('scriptContext', () => {
             const context = scriptContext(config, files);
 
             const { scriptResult } = context;
-            expect(scriptResult.length).to.equal(2);
-
-            const allExecuted = scriptResult.every(r => r.success);
-            expect(allExecuted).to.equal(true);
+            scriptOk(scriptResult);
 
             expect(executedCount).to.equal(0);
 
@@ -172,10 +166,7 @@ describe('scriptContext', () => {
             const context = scriptContext(config, files);
 
             const { scriptResult } = context;
-            expect(scriptResult.length).to.equal(1);
-
-            const object = scriptResult[0];
-            expect(object.success).to.equal(true);
+            scriptOk(scriptResult);
 
             expect(executedCount).to.equal(0);
 
@@ -212,10 +203,7 @@ describe('scriptContext', () => {
             const context = scriptContext(config, files);
 
             const { scriptResult } = context;
-            expect(scriptResult.length).to.equal(1);
-
-            const object = scriptResult[0];
-            expect(object.success).to.equal(true);
+            scriptOk(scriptResult);
 
             expect(executedCount).to.equal(0);
 
@@ -244,7 +232,7 @@ describe('scriptContext', () => {
             const context = scriptContext(config, files);
 
             const { scriptResult } = context;
-            expect(scriptResult.length).to.equal(1);
+            scriptOk(scriptResult);
 
             expect(executed).to.equal(false);
 
@@ -264,13 +252,13 @@ describe('scriptContext', () => {
                 exec: () => (executed = true)
             };
             const files = [{
-                content: 'const timeoutId = setTimeout(resolve("exec"), 0); clearTimeout(timeoutId)'
+                content: 'const timeoutId = setTimeout(resolve("exec"), 0); clearTimeout(timeoutId);'
             }];
 
             const context = scriptContext(config, files);
 
             const { scriptResult } = context;
-            expect(scriptResult.length).to.equal(1);
+            scriptOk(scriptResult);
 
             expect(executed).to.equal(false);
 
@@ -281,4 +269,62 @@ describe('scriptContext', () => {
         });
     });
 
+    describe('provide functions', () => {
+        it('should be able to provide functions', () => {
+            let executed = false;
+            const config = {
+                exec: () => (executed = true)
+            };
+            const files = [{
+                content: 'const exec = resolve("exec"); provideFn("customExec", () => exec());',
+            }, {
+                content: 'const customExec = scriptResolve("customExec"); customExec();'
+            }];
+
+            const context = scriptContext(config, files);
+
+            const { scriptResult } = context;
+            scriptOk(scriptResult);
+
+            expect(executed).to.equal(true);
+        });
+    });
+
+
+    describe('provide / (un)subscribe script event', () => {
+        it('should be able to provide events', () => {
+
+            let executedCount = 0;
+            const emitter = new EventEmitter();
+
+            const config = {
+                emitter,
+                execute: () => executedCount++
+            };
+            const files = [{
+                content: 'const execute = provideEvent("exec"); subscribe("emitter.event", execute);'
+            }, {
+                content:
+                    'const exec = resolve("execute"); ' +
+                    'const once = () => { exec(); scriptUnsubscribe("exec") }; ' +
+                    'scriptSubscribe("exec", once);'
+            }];
+
+
+            const context = scriptContext(config, files);
+
+            const { scriptResult } = context;
+            scriptOk(scriptResult);
+
+            expect(executedCount).to.equal(0);
+
+            emitter.emit('event');
+
+            expect(executedCount).to.equal(1);
+
+            emitter.emit('event');
+
+            expect(executedCount).to.equal(1);
+        });
+    });
 });
