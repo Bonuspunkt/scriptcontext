@@ -3,6 +3,11 @@ const { EventEmitter } = require('events');
 const expect = require('chai').expect;
 const scriptContext = require('../../lib/scriptContext');
 
+const scriptOk = scriptResult => {
+    const failed = scriptResult.some(script => !script.success);
+    expect(failed).to.equal(false);
+};
+
 describe('scriptContext', () => {
 
     describe('security', () => {
@@ -19,11 +24,11 @@ describe('scriptContext', () => {
         });
 
         it('should not be possible to store data at functions', () => {
-            const config = {
+            const provide = {
                 fn: () => {}
             };
 
-            const context = scriptContext(config, [{
+            const context = scriptContext({ provide }, [{
                 content: 'resolve("fn").data = true'
             }]);
 
@@ -32,7 +37,7 @@ describe('scriptContext', () => {
             const object = scriptResult[0];
             expect(object.success).to.equal(true);
 
-            expect(config.fn.data).to.not.equal(true);
+            expect(provide.fn.data).to.not.equal(true);
         });
 
         it('should not be possible to override sandbox buildins', () => {
@@ -45,44 +50,40 @@ describe('scriptContext', () => {
             const allExecuted = context.scriptResult.every(r => r.success);
             expect(allExecuted).to.equal(false);
         });
+
     });
 
     describe('resolve', () => {
 
         it('should resolve functions', () => {
             const context = scriptContext({
-                func: () => {},
+                provide: { func: () => {} }
             }, [{
                 file: 'object.js',
                 content: 'resolve("func")'
             }]);
 
-            const scriptResult = context.scriptResult;
-            expect(scriptResult.length).to.equal(1);
-            const object = scriptResult[0];
-            expect(object.success).to.equal(true);
-
+            const { scriptResult } = context;
+            scriptOk(scriptResult);
         });
 
         it('should resolve nested functions', () => {
             const context = scriptContext({
-                object: {
-                    func: () => {}
+                provide: {
+                    object: { func: () => {} }
                 }
             }, [{
                 file: 'objectFunc.js',
                 content: 'resolve("object.func")'
             }]);
 
-            const scriptResult = context.scriptResult;
-            expect(scriptResult.length).to.equal(1);
-            const objectFunc = scriptResult[0];
-            expect(objectFunc.success).to.equal(true);
+            const { scriptResult } = context;
+            scriptOk(scriptResult);
         });
 
         it('should not resolve non functions', () => {
             const context = scriptContext({
-                object: {}
+                provide: { object: {} }
             }, [{
                 file: 'object.js',
                 content: 'resolve("object")'
@@ -90,8 +91,8 @@ describe('scriptContext', () => {
 
             const { scriptResult } = context;
             expect(scriptResult.length).to.equal(1);
-            const object = scriptResult[0];
-            expect(object.success).to.equal(false);
+            const [script] = scriptResult;
+            expect(script.success).to.equal(false);
         });
 
     });
@@ -102,7 +103,7 @@ describe('scriptContext', () => {
             const emitter = new EventEmitter();
 
             let executedCount = 0;
-            const config = {
+            const provide = {
                 emitter,
                 execute: () => executedCount++
             };
@@ -112,13 +113,10 @@ describe('scriptContext', () => {
             }];
 
 
-            const context = scriptContext(config, files);
+            const context = scriptContext({ provide }, files);
 
             const { scriptResult } = context;
-            expect(scriptResult.length).to.equal(1);
-
-            const object = scriptResult[0];
-            expect(object.success).to.equal(true);
+            scriptOk(scriptResult);
 
             expect(executedCount).to.equal(0);
 
@@ -131,7 +129,7 @@ describe('scriptContext', () => {
             const emitter = new EventEmitter();
 
             let executedCount = 0;
-            const config = {
+            const provide = {
                 emitter,
                 execute: () => executedCount++
             };
@@ -140,13 +138,10 @@ describe('scriptContext', () => {
                 { content: 'const execute = resolve("execute"); subscribe("emitter.event", execute);'}
             ];
 
-            const context = scriptContext(config, files);
+            const context = scriptContext({ provide }, files);
 
             const { scriptResult } = context;
-            expect(scriptResult.length).to.equal(2);
-
-            const allExecuted = scriptResult.every(r => r.success);
-            expect(allExecuted).to.equal(true);
+            scriptOk(scriptResult);
 
             expect(executedCount).to.equal(0);
 
@@ -159,7 +154,7 @@ describe('scriptContext', () => {
             const emitter = new EventEmitter();
 
             let executedCount = 0;
-            const config = {
+            const provide = {
                 emitter,
                 execute: () => executedCount++
             };
@@ -169,13 +164,10 @@ describe('scriptContext', () => {
             }];
 
 
-            const context = scriptContext(config, files);
+            const context = scriptContext({ provide }, files);
 
             const { scriptResult } = context;
-            expect(scriptResult.length).to.equal(1);
-
-            const object = scriptResult[0];
-            expect(object.success).to.equal(true);
+            scriptOk(scriptResult);
 
             expect(executedCount).to.equal(0);
 
@@ -194,7 +186,7 @@ describe('scriptContext', () => {
             const emitter = new EventEmitter();
 
             let executedCount = 0;
-            const config = {
+            const provide = {
                 emitter,
                 execute: () => executedCount++
             };
@@ -209,13 +201,10 @@ describe('scriptContext', () => {
             }];
 
 
-            const context = scriptContext(config, files);
+            const context = scriptContext({ provide }, files);
 
             const { scriptResult } = context;
-            expect(scriptResult.length).to.equal(1);
-
-            const object = scriptResult[0];
-            expect(object.success).to.equal(true);
+            scriptOk(scriptResult);
 
             expect(executedCount).to.equal(0);
 
@@ -234,17 +223,17 @@ describe('scriptContext', () => {
 
         it('should provide setTimeout', done => {
             let executed = false;
-            const config = {
+            const provide = {
                 exec: () => (executed = true)
             };
             const files = [{
                 content: 'setTimeout(resolve("exec"), 0)'
             }];
 
-            const context = scriptContext(config, files);
+            const context = scriptContext({ provide }, files);
 
             const { scriptResult } = context;
-            expect(scriptResult.length).to.equal(1);
+            scriptOk(scriptResult);
 
             expect(executed).to.equal(false);
 
@@ -260,17 +249,17 @@ describe('scriptContext', () => {
 
         it('should provide clearTimeout', done => {
             let executed = false;
-            const config = {
+            const provide = {
                 exec: () => (executed = true)
             };
             const files = [{
-                content: 'const timeoutId = setTimeout(resolve("exec"), 0); clearTimeout(timeoutId)'
+                content: 'const timeoutId = setTimeout(resolve("exec"), 0); clearTimeout(timeoutId);'
             }];
 
-            const context = scriptContext(config, files);
+            const context = scriptContext({ provide }, files);
 
             const { scriptResult } = context;
-            expect(scriptResult.length).to.equal(1);
+            scriptOk(scriptResult);
 
             expect(executed).to.equal(false);
 
@@ -279,6 +268,126 @@ describe('scriptContext', () => {
                 done();
             }, 1);
         });
+
     });
 
+    describe('provide functions', () => {
+
+        it('should not be able to provide functions when canProvideFn is false', () => {
+            const context = scriptContext(
+                { canProvideFn: false },
+                [{ content: 'provideFn("noop", () => {});' }]
+            );
+
+            const [failed] = context.scriptResult;
+            expect(failed.success).to.equal(false);
+        });
+
+        it('should be able to provide functions', () => {
+            let executed = false;
+            const provide = {
+                exec: () => (executed = true)
+            };
+            const files = [{
+                content: 'const exec = resolve("exec"); provideFn("customExec", () => exec());',
+            }, {
+                content: 'const customExec = scriptResolve("customExec"); customExec();'
+            }];
+
+            const context = scriptContext({ provide }, files);
+
+            const { scriptResult } = context;
+            scriptOk(scriptResult);
+
+            expect(executed).to.equal(true);
+        });
+
+        it('should not be able to register same function twice', () => {
+            const context = scriptContext({}, [
+                { content: 'provideFn("name", () => {});' },
+                { content: 'provideFn("name", () => {});' },
+            ]);
+
+            const { scriptResult } = context;
+            const [ worked, failed ] = scriptResult;
+
+            expect(worked.success).to.equal(true);
+            expect(failed.success).to.equal(false);
+        });
+
+        it('should not be possibe to register other than functions', () => {
+            const context = scriptContext({}, [
+                { content: 'provideFn("name", 1);' },
+                { content: 'provideFn("name", "text");' },
+                { content: 'provideFn("name", /regExp/);' },
+                { content: 'provideFn("", new Date())' }
+            ]);
+
+            const allError = context.scriptResult.every(script => script.error);
+            expect(allError).to.equal(true);
+        });
+
+    });
+
+    describe('provide / (un)subscribe script event', () => {
+
+        it('should not be able to provide events when canProvideEvent is false', () => {
+            const context = scriptContext(
+                { canProvideEvent: false },
+                [{ content: 'const ev = provideEvent("a");' }]
+            );
+
+            const [failed] = context.scriptResult;
+            expect(failed.success).to.equal(false);
+        });
+
+        it('should be able to provide events', () => {
+
+            let executedCount = 0;
+            const emitter = new EventEmitter();
+
+            const provide = {
+                emitter,
+                execute: () => executedCount++
+            };
+            const files = [{
+                content: 'const execute = provideEvent("exec"); subscribe("emitter.event", execute);'
+            }, {
+                content:
+                    'const exec = resolve("execute"); ' +
+                    'const once = () => { exec(); scriptUnsubscribe("exec") }; ' +
+                    'scriptSubscribe("exec", once);'
+            }];
+
+
+            const context = scriptContext({ provide }, files);
+
+            const { scriptResult } = context;
+            scriptOk(scriptResult);
+
+            expect(executedCount).to.equal(0);
+
+            emitter.emit('event');
+
+            expect(executedCount).to.equal(1);
+
+            emitter.emit('event');
+
+            expect(executedCount).to.equal(1);
+        });
+
+        it('should not be possibe to register an event twice', () => {
+            const context = scriptContext({}, [
+                { content: 'provideEvent("name");' },
+                { content: 'provideEvent("name");' },
+            ]);
+
+            const { scriptResult } = context;
+            const [ worked, failed ] = scriptResult;
+
+            expect(worked.success).to.equal(true);
+            expect(failed.success).to.equal(false);
+        });
+
+    });
 });

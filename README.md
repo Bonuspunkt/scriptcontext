@@ -11,7 +11,9 @@ provides a disposable sandbox for scripts
 ## how to use
 ``` js
 const { EventEmitter } = require('events');
-const config = {
+const scriptContext = require('scriptcontext');
+
+const provide = {
     func: () => console.log('func'),
     object: {
         func: () => console.log('object.func')
@@ -26,25 +28,48 @@ const scripts = [{
     content: 'const func = resolve("func"); subscribe("emitter.event", func);'
 }];
 
-const context = scriptContext(config, scripts);
+const context = scriptcontext({ provide }, scripts);
 // console prints `object.func`
-config.emitter.emit('event');
+provide.emitter.emit('event');
 // console prints `func`
+
+context.destroy();
 ```
+
+## scriptcontext(config, scripts)
+
+- `config`
+
+    - `provide`
+
+        defaults to `{}`
+
+    - `canProvideFn`
+
+        defaults to `true`
+
+    - `canProvideEvent`
+
+        defaults to `true`
+
+- `scripts`
+
+## available to scripts
+### default
 
 - `resolve(string)`
 
-    to access a function of the context.
+    to access a function, which was provided via `config.provide`.
 
-    **NOTE:** you have to ensure the return values arn't exposing dangerous stuff (ex. `require`)
+    **NOTE:** you have to ensure the return values are not exposing dangerous stuff (ex. `require`)
 
 - `subscribe(string, fn)`
 
-    to register a listener to a EventEmitter.
+    to register a listener to a EventEmitter, which was provided via `config.provide`.
 
 - `unsubscribe(string, fn)`
 
-    to unregister a function from a EventEmitter.
+    to unregister a function from a EventEmitter, which was provided via `config.provide`.
 
 - `setTimeout(callback, delay[, ...args])`
 
@@ -53,6 +78,20 @@ config.emitter.emit('event');
 - `clearTimeout(timeout)`
 
     [same as in node](https://nodejs.org/api/timers.html#timers_cleartimeout_timeout)
+
+### canProvideFn
+
+- provideFn(alias, fn)
+
+- scriptResolve(alias)
+
+### canProvideEvent
+
+- provideEvent(eventName)
+
+- scriptSubscribe(eventName, fn)
+
+- scriptUnsubscribe(eventName, fn)
 
 
 ## install
