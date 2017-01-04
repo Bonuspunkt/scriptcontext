@@ -8,4 +8,4 @@ cache:
     - node_modules # NPM packages
 
 after_success:
-    - bash <(curl -s https://codecov.io/bash)
+    - npm run coverage
