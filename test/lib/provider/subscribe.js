@@ -26,7 +26,7 @@ describe('subscribe', () => {
         const { provide } = subscribeProvider({ subscribe: { emitter } });
         const { subscribe, unsubscribe } = provide;
 
-        const incExecutedCount1 = () => executedCount1++
+        const incExecutedCount1 = () => executedCount1++;
         subscribe('emitter.event', incExecutedCount1);
 
         expect(executedCount1).to.equal(0);
@@ -69,6 +69,33 @@ describe('subscribe', () => {
         emitter.emit('event');
 
         expect(executedCount).to.equal(0);
+    });
+
+    it('should crash', () => {
+
+        const emitter = new EventEmitter();
+
+        const { provide } = subscribeProvider({ subscribe: { emitter } });
+        const { subscribe } = provide;
+        subscribe('emitter.event', () => { throw Error(); });
+
+        expect(() => emitter.emit('event')).to.throw(Error);
+    });
+
+    it('should not crash', () => {
+
+        let error;
+        const emitter = new EventEmitter();
+
+        const { provide } = subscribeProvider({
+            subscribe: { emitter },
+            onError: (e) => { error = e; }
+        });
+        const { subscribe } = provide;
+        subscribe('emitter.event', () => { throw Error(); });
+
+        expect(() => emitter.emit('event')).to.not.throw(Error);
+        expect(error).to.be.instanceof(Error);
     });
 
 });
