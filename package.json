@@ -26,7 +26,7 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Bonuspunkt/ircmessageparser.git"
+    "url": "git+https://github.com/Bonuspunkt/scriptcontext.git"
   },
   "keywords": [],
   "bugs": {
