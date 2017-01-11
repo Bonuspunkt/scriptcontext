@@ -13,12 +13,18 @@ provides a disposable sandbox for scripts
 const { EventEmitter } = require('events');
 const scriptContext = require('scriptcontext');
 
-const provide = {
-    func: () => console.log('func'),
-    object: {
-        func: () => console.log('object.func')
+const emitter = new EventEmitter();
+
+const config = {
+    resolve: {
+        func: () => console.log('func'),
+        object: {
+            func: () => console.log('object.func')
+        }
     },
-    emitter: new EventEmitter()
+    subscribe: {
+        emitter
+    }
 };
 
 const scripts = [{
@@ -28,9 +34,9 @@ const scripts = [{
     content: 'const func = resolve("func"); subscribe("emitter.event", func);'
 }];
 
-const context = scriptcontext({ provide }, scripts);
+const context = scriptcontext(config, scripts);
 // console prints `object.func`
-provide.emitter.emit('event');
+emitter.emit('event');
 // console prints `func`
 
 context.destroy();
@@ -40,58 +46,21 @@ context.destroy();
 
 - `config`
 
-    - `provide`
+see `lib/provider`
 
-        defaults to `{}`
+    - `resolve` <Object>
 
-    - `canProvideFn`
+    - `scriptEvent` <Boolean>
 
-        defaults to `true`
+    - `scriptFn` <Boolean>
 
-    - `canProvideEvent`
+    - `subscribe` <Object>
 
-        defaults to `true`
+    - `onError` <Function>
+
+    - `timeout` <Boolean>
 
 - `scripts`
-
-## available to scripts
-### default
-
-- `resolve(string)`
-
-    to access a function, which was provided via `config.provide`.
-
-    **NOTE:** you have to ensure the return values are not exposing dangerous stuff (ex. `require`)
-
-- `subscribe(string, fn)`
-
-    to register a listener to a EventEmitter, which was provided via `config.provide`.
-
-- `unsubscribe(string, fn)`
-
-    to unregister a function from a EventEmitter, which was provided via `config.provide`.
-
-- `setTimeout(callback, delay[, ...args])`
-
-    [same as in node](https://nodejs.org/api/timers.html#timers_settimeout_callback_delay_args)
-
-- `clearTimeout(timeout)`
-
-    [same as in node](https://nodejs.org/api/timers.html#timers_cleartimeout_timeout)
-
-### canProvideFn
-
-- provideFn(alias, fn)
-
-- scriptResolve(alias)
-
-### canProvideEvent
-
-- provideEvent(eventName)
-
-- scriptSubscribe(eventName, fn)
-
-- scriptUnsubscribe(eventName, fn)
 
 
 ## install
