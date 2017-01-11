@@ -34,7 +34,7 @@ describe('timeout', () => {
             let executed = false;
 
             const timeoutId = provide.setTimeout(() => { executed = true; }, 0);
-            clearTimeout(timeoutId);
+            provide.clearTimeout(timeoutId);
 
             expect(executed).to.equal(false);
 
