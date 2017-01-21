@@ -45,4 +45,26 @@ describe('scriptContext', () => {
         });
     });
 
+
+    it('destroy should call provider destroy method', done => {
+        let executed = false;
+        const context = scriptContext({
+            resolve: { execute: () => { executed = true; } },
+            timeout: true
+        }, [{
+            file: 'timeout.js',
+            content: 'setTimeout(() => resolve(execute), 0);'
+        }]);
+
+        const { scriptResult, destroy } = context;
+        expect(scriptResult.length).to.equal(1);
+        const [script] = scriptResult;
+        expect(script.success).to.equal(true);
+        destroy();
+
+        setTimeout(() => {
+            expect(executed).to.equal(false);
+            done();
+        }, 1);
+    });
 });
