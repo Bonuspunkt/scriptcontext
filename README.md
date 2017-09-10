@@ -1,4 +1,6 @@
 # scriptcontext
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/Bonuspunkt/scriptcontext.svg)](https://greenkeeper.io/)
 [![Build Status](https://travis-ci.org/Bonuspunkt/scriptcontext.svg?branch=master)](https://travis-ci.org/Bonuspunkt/scriptcontext)
 [![codecov.io](https://img.shields.io/codecov/c/github/Bonuspunkt/scriptcontext.svg?branch=master)](https://codecov.io/gh/Bonuspunkt/scriptcontext?branch=master)
 [![npm](https://img.shields.io/npm/v/scriptcontext.svg)](https://www.npmjs.com/package/scriptcontext)
