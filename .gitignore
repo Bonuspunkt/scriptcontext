@@ -2,3 +2,4 @@
 node_modules/
 coverage.lcov
 npm-debug.log
+coverage
